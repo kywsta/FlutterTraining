@@ -12,7 +12,7 @@ Flutter offers several navigation paradigms:
 
 This section will guide you through each approach, starting with the basics and progressing to more advanced concepts.
 
-## 6.1 Navigator
+## Navigator
 
 ### Basic Navigator
 
@@ -20,7 +20,7 @@ This section will guide you through each approach, starting with the basics and 
 
 ```
 
-## 6.2 Router
+## Router
 
 ### Understanding Flutter's Router System
 
@@ -120,7 +120,7 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-## 6.3 Go Router
+## Go Router
 
 GoRouter is a powerful third-party package that simplifies declarative routing in Flutter applications. It provides excellent support for deep linking, nested routing, and type-safe navigation.
 
@@ -216,7 +216,7 @@ GoRoute(
 ),
 ```
 
-## 6.4 Go, Push, Pop
+## Go, Push, Pop
 
 ### Navigation Methods with GoRouter
 
@@ -356,7 +356,7 @@ final GoRouter _router = GoRouter(
 );
 ```
 
-## 6.5 Deeplink
+## Deeplink
 
 Deep linking allows users to navigate directly to specific screens in your app through URLs. This is essential for web applications and provides a better user experience on mobile platforms.
 

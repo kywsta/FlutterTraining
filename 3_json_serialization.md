@@ -4,7 +4,7 @@ Flutter provides multiple approaches for JSON serialization, ranging from manual
 
 ## Github
 
-- https://github.com/kywsta/dart_json_serializable_example.git
+https://github.com/kywsta/dart_json_serializable_example.git
 
 ## Manual JSON Serialization
 
