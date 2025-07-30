@@ -1,0 +1,272 @@
+# 3. JSON Serialization
+
+## Overview
+
+Flutter provides multiple approaches for JSON serialization, ranging from manual implementation to automated code generation.
+
+## Learning Objectives
+
+By the end of this section, you will understand:
+
+- Manual JSON serialization techniques
+- Automated code generation using `json_annotation`
+- Advanced serialization with `freezed` package
+- Best practices for handling complex data structures
+- Error handling in serialization processes
+
+## 3.1 Manual JSON Serialization
+
+### Basic Implementation
+
+Manual serialization involves writing `toJson()` and `fromJson()` methods manually for each model class.
+
+```dart
+class Product {
+  final String id;
+  final String name;
+  final double price;
+
+  Product({required this.id, required this.name, required this.price});
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(id: json['id'], name: json['name'], price: json['price']);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'name': name, 'price': price};
+  }
+
+  @override
+  String toString() {
+    return '$name : $price';
+  }
+}
+```
+
+and then you can use it like this:
+
+```dart
+void main(List<String> args) {
+  final product = Product(id: '1', name: 'Product 1', price: 100);
+  final json = product.toJson();
+  final jsonString = jsonEncode(json);
+
+  print(json);
+  print(jsonString);
+
+  final parsedJson = jsonDecode(jsonString);
+  final parsedProduct = Product.fromJson(parsedJson);
+
+  print(parsedProduct.toString());
+}
+```
+
+and the output will be:
+
+```
+{id: 1, name: Product 1, price: 100.0}
+{"id":"1","name":"Product 1","price":100.0}
+Product 1 : 100.0
+```
+
+## 3.2 JSON Annotation Package
+
+The `json_annotation` package provides code generation capabilities to automate serialization logic.
+
+### Setup
+
+Add dependencies to `pubspec.yaml` using the following command:
+
+```bash
+flutter pub add json_annotation dev:build_runner dev:json_serializable
+```
+
+This will add the following to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  build_runner: ^2.4.9
+  json_serializable: ^6.7.1
+```
+
+### Basic Usage
+
+First, we need to create a model class with `@JsonSerializable()` annotation and add `part 'your_file_name.g.dart';` to the top of the file.
+
+```dart
+// product.dart
+
+import 'package:json_annotation/json_annotation.dart';
+
+part 'product.g.dart';
+
+@JsonSerializable()
+class Product {
+  final String id;
+  final String name;
+  final double price;
+
+  Product({required this.id, required this.name, required this.price});
+
+  factory Product.fromJson(Map<String, dynamic> json) => _$ProductFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ProductToJson(this);
+}
+
+@JsonSerializable()
+class Package {
+  final String id;
+  final List<Product> products;
+  final DateTime deliveryDate;
+
+  Package({required this.id, required this.products, required this.deliveryDate});
+
+  factory Package.fromJson(Map<String, dynamic> json) => _$PackageFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PackageToJson(this);
+}
+```
+
+and then we need to run the following command to generate the `product.g.dart` file:
+
+```bash
+dart run build_runner build -d
+```
+
+this will generate the `product.g.dart` file in the same directory.
+
+```dart
+// product.g.dart
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'product.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+Product _$ProductFromJson(Map<String, dynamic> json) => Product(
+  id: json['id'] as String,
+  name: json['name'] as String,
+  price: (json['price'] as num).toDouble(),
+);
+
+Map<String, dynamic> _$ProductToJson(Product instance) => <String, dynamic>{
+  'id': instance.id,
+  'name': instance.name,
+  'price': instance.price,
+};
+
+Package _$PackageFromJson(Map<String, dynamic> json) => Package(
+  id: json['id'] as String,
+  products: (json['products'] as List<dynamic>)
+      .map((e) => Product.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  deliveryDate: DateTime.parse(json['deliveryDate'] as String),
+);
+
+Map<String, dynamic> _$PackageToJson(Package instance) => <String, dynamic>{
+  'id': instance.id,
+  'products': instance.products,
+  'deliveryDate': instance.deliveryDate.toIso8601String(),
+};
+```
+
+## 3.3 Freezed Package
+
+Freezed is a powerful code generation package that creates immutable(default) or mutable classes with built-in serialization support.
+
+### Setup
+
+Add dependencies to `pubspec.yaml` using the following command:
+
+```bash
+flutter pub add freezed_annotation json_annotation dev:build_runner dev:freezed dev:json_serializable
+```
+
+This will add the following to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  build_runner: ^2.4.9
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+```
+
+### Primary Constructor
+
+Freezed implements Primary Constructors by relying on factory constructors. The idea is, you define a factory and Freezed generates everything else
+
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+// required: associates our `main.dart` with the code generated by Freezed
+part 'person.freezed.dart';
+// optional: Since our Person class is serializable, we must add this line.
+// But if Person was not serializable, we could skip it.
+part 'person.g.dart';
+
+@freezed
+abstract class Person with _$Person {
+  // required: This is required for the `sayHello` method to work.
+  const Person._();
+
+  const factory Person({
+    required int id,
+    required String firstName,
+    required String lastName,
+    @JsonKey(name: 'is_active') @Default(true) bool isActive,
+    @JsonKey(name: 'created_at', toJson: _createdAtToJson, fromJson: _createdAtFromJson) required DateTime createdAt,
+  }) = _Person;
+
+  factory Person.fromJson(Map<String, Object?> json) => _$PersonFromJson(json);
+
+  void sayHello() {
+    print('Hello, my name is $firstName $lastName');
+  }
+}
+
+int _createdAtToJson(DateTime date) => date.millisecondsSinceEpoch;
+
+DateTime _createdAtFromJson(int timestamp) => DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+```
+
+In the above example, we are using `@JsonKey` to customize the serialization and deserialization of the `createdAt` field.
+
+- `name` is the name of the field in the JSON.
+- `toJson` is the function to convert the field to JSON.
+- `fromJson` is the function to convert the field from JSON.
+
+### Classic
+
+Instead of primary constructors, you can write normal Dart classes.
+
+```dart
+@freezed
+@JsonSerializable(explicitToJson: true)
+class Group with _$Group {
+  @override
+  final String name;
+  @override
+  List<Person> members;
+
+  Group({required this.name, List<Person>? members}) : members = members ?? [];
+
+  factory Group.fromJson(Map<String, dynamic> json) => _$GroupFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GroupToJson(this);
+}
+```
+
+In the above example, we are using `@JsonSerializable(explicitToJson: true)` to tell Freezed to generate the `toJson` method for nested objects.
+
+And we are using non-constant constructor to initialize the `members` field to be able to make it mutable.

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutter Training Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #2c3e50;
+            color: white;
+            overflow-y: auto;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color: #34495e;
+            border-bottom: 1px solid #4a5f7a;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            padding: 10px 20px;
+            font-weight: 600;
+            color: #ecf0f1;
+            background-color: #34495e;
+            border-left: 3px solid #3498db;
+        }
+
+        .nav-items {
+            list-style: none;
+        }
+
+        .nav-item {
+            padding: 8px 20px 8px 40px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: #34495e;
+            border-left-color: #3498db;
+        }
+
+        .nav-item.active {
+            background-color: #3498db;
+            border-left-color: #2980b9;
+        }
+
+        .nav-item.has-content {
+            color: #ecf0f1;
+        }
+
+        .nav-item.no-content {
+            color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 300px;
+            padding: 40px;
+            background-color: white;
+            min-height: 100vh;
+        }
+
+        .content-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .content-header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .content-body {
+            max-width: 800px;
+        }
+
+        .content-body h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            margin-top: 2rem;
+        }
+
+        .content-body h2 {
+            font-size: 1.5rem;
+            color: #34495e;
+            margin-bottom: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .content-body h3 {
+            font-size: 1.2rem;
+            color: #34495e;
+            margin-bottom: 0.6rem;
+            margin-top: 1.2rem;
+        }
+
+        .content-body p {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+
+        .content-body code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        .content-body pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .content-body pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .content-body ul, .content-body ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+
+        .content-body li {
+            margin-bottom: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            color: #dc3545;
+            padding: 20px;
+            background-color: #f8d7da;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1001;
+                background-color: #3498db;
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+        }
+
+        .mobile-toggle {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+    
+    <div class="container">
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Flutter Training</h1>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">1. Basic</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="1.1_flutter_basics.md">1.1 Flutter</li>
+                        <li class="nav-item has-content" data-file="1.2_flutter_widgets.md">1.2 Widgets</li>
+                        <li class="nav-item has-content" data-file="1.3_flutter_slivers.md">1.3 Sliver</li>
+                        <li class="nav-item has-content" data-file="1.4_theme.md">1.4 Theme</li>
+                        <li class="nav-item has-content" data-file="1.5_localization.md">1.5 Localization</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">3. Json Serialization</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="3_json_serialization.md">3. Json Serialization</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">4. Data Persistent</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="4_data_persistent.md">4. Data Persistent</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">6. Navigation</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="6_navigation.md">6. Navigation</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">7. Dependency Injection</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="7_dependency_injection.md">7. Dependency Injection</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">8. Architecture</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="8_architecture.md">8. Architecture</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">9. State Management</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="9_state_management.md">9. State Management</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">11. Consuming data</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="11_network_calls.md">11. Network Calls</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">12. Error Handling</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="12_error_handling.md">12. Error Handling</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">13. Push Notification</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="13_push_notification.md">13. Push Notification</li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">15. Isolate</div>
+                    <ul class="nav-items">
+                        <li class="nav-item has-content" data-file="15_isolate.md">15. Isolate</li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Flutter Training Documentation</h1>
+                <p>Select a topic from the sidebar to view the documentation.</p>
+            </div>
+            <div class="content-body" id="content">
+                <div class="loading">
+                    <h2>Welcome to Flutter Training Documentation</h2>
+                    <p>This documentation covers various aspects of Flutter development, from basic concepts to advanced topics like state management, architecture, and more.</p>
+                    <p>Use the sidebar to navigate through different sections and learn about Flutter development.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Markdown to HTML converter (simple implementation)
+        function markdownToHtml(markdown) {
+            return markdown
+                // Headers
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                // Bold
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Italic
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Code blocks
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                // Inline code
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // Lists
+                .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                .replace(/^\- (.*$)/gim, '<li>$1</li>')
+                // Paragraphs
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^(?!<[h|p|li|pre|ul|ol]).*$/gim, '<p>$&</p>')
+                // Clean up empty paragraphs
+                .replace(/<p><\/p>/g, '')
+                .replace(/<p><p>/g, '<p>')
+                .replace(/<\/p><\/p>/g, '</p>');
+        }
+
+        // Load content from markdown file
+        async function loadContent(filename) {
+            try {
+                const response = await fetch(filename);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const markdown = await response.text();
+                const html = markdownToHtml(markdown);
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <h2>Error loading content</h2>
+                        <p>Could not load ${filename}: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Handle navigation clicks
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item.has-content');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active class from all items
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    
+                    // Add active class to clicked item
+                    this.classList.add('active');
+                    
+                    // Load content
+                    const filename = this.getAttribute('data-file');
+                    loadContent(filename);
+                    
+                    // Close sidebar on mobile
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('open');
+                    }
+                });
+            });
+        });
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileToggle = document.querySelector('.mobile-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !mobileToggle.contains(event.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html> 
