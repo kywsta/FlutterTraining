@@ -2,6 +2,11 @@
 
 Flutter provides several options for local data storage, each suited for different use cases and requirements.
 
+## Github Repos
+
+- https://github.com/kywsta/flutter_local_storage_examples.git
+- https://github.com/kywsta/flutter_objectbox_sample.git
+
 ## 4.1 Shared Preferences
 
 Shared Preferences is the simplest form of local storage in Flutter, designed for storing small pieces of primitive data such as user settings, preferences, and simple configuration values.
@@ -316,30 +321,31 @@ For more complex data storage requirements, Flutter supports several local datab
 
 | Name             | Type       | Language | Supported Platforms                      | Package   |
 | ---------------- | ---------- | -------- | ---------------------------------------- | --------- |
-| SQLite (sqflite) | Relational | SQL      | Android, iOS, macOS                      | sqflite   |
+| SQLite (sqflite) | Relational | SQL/Dart | Android, iOS, macOS                      | sqflite   |
 | Drift            | Relational | SQL/Dart | Android, iOS, Web, Desktop, macOS, Linux | drift     |
 | Hive CE          | NoSQL      | Dart     | Android, iOS, Web, Desktop, macOS, Linux | hive_ce   |
 | ObjectBox        | NoSQL      | Dart     | Android, iOS, macOS, Linux, Windows      | objectbox |
+| Realm            | NoSQL      | Dart     | Android, iOS, macOS, Linux, Windows      | realm     |
 
 ### 4.3.1 SQLite (sqflite)
 
-SQLite is a lightweight, serverless relational database that's widely used in mobile applications. The `sqflite` package provides Flutter integration for SQLite.
+SQLite is a lightweight, relational database that's widely used in mobile applications. The `sqflite` package provides Flutter integration for SQLite.
 
 #### Dependencies
 
 ```yaml
 dependencies:
-  sqflite: ^2.3.0
-  path: ^1.8.3
+  sqflite: latest
+  path: latest
 ```
 
 #### Code Example
 
 ```dart
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
-class DatabaseHelper {
+class SqfliteDatabaseHelper {
   static Database? _database;
   static const String _tableName = 'notes';
 
@@ -352,11 +358,7 @@ class DatabaseHelper {
 
   static Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'notes.db');
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createTable,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createTable);
   }
 
   static Future<void> _createTable(Database db, int version) async {
@@ -393,22 +395,39 @@ class DatabaseHelper {
 }
 ```
 
+#### Usage
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  SqfliteDatabaseHelper.insertNote({
+    'title': 'Sample Note',
+    'content': 'This is a sample note',
+    'createdAt': DateTime.now().toIso8601String(),
+  });
+
+  List<Map<String, dynamic>> allNotes =
+      await SqfliteDatabaseHelper.getAllNotes();
+  print(allNotes);
+}
+```
+
 #### Pros and Cons
 
 **Pros:**
 
-- Mature and stable technology
-- SQL queries provide powerful data manipulation
-- Excellent performance for complex queries
-- Wide community support and documentation
-- ACID compliance ensures data integrity
+- Support transactions and batches
+- Automatic version managment during open
+- Helpers for insert/query/update/delete queries
+- DB operation executed in a background thread on iOS and Android
 
 **Cons:**
 
 - Requires SQL knowledge
 - More verbose code compared to NoSQL alternatives
-- Manual schema management and migrations
-- Platform-specific limitations (not available on web)
+- Need more work to make type safe queries
+- No native support for web, linux, windows
 
 ### 4.3.2 Drift
 
@@ -418,61 +437,85 @@ Drift (formerly Moor) is a reactive persistence library built on top of SQLite, 
 
 ```yaml
 dependencies:
-  drift: ^2.14.1
-  sqlite3_flutter_libs: ^0.5.15
-  path_provider: ^2.1.1
-  path: ^1.8.3
+  drift: latest
+  drift_flutter: latest
+  path_provider: latest
 
 dev_dependencies:
-  drift_dev: ^2.14.1
-  build_runner: ^2.4.7
+  drift_dev: latest
+  build_runner: latest
 ```
 
 #### Code Example
 
 ```dart
 // database.dart
-import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 
-part 'database.g.dart';
+part 'drift_database.g.dart';
 
-class Notes extends Table {
+class TodoItems extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get title => text().withLength(min: 1, max: 100)();
-  TextColumn get content => text()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  TextColumn get title => text().withLength(min: 6, max: 32)();
+  TextColumn get content => text().named('body')();
+  DateTimeColumn get createdAt => dateTime().nullable()();
 }
 
-@DriftDatabase(tables: [Notes])
+@DriftDatabase(tables: [TodoItems])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  // After generating code, this class needs to define a `schemaVersion` getter
+  // and a constructor telling drift where the database should be stored.
+  // These are described in the getting started guide: https://drift.simonbinder.eu/setup/
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;
 
-  // CRUD operations
-  Future<int> insertNote(NotesCompanion note) => into(notes).insert(note);
-
-  Future<List<Note>> getAllNotes() => select(notes).get();
-
-  Future<bool> updateNote(NotesCompanion note) => update(notes).replace(note);
-
-  Future<int> deleteNote(int id) =>
-    (delete(notes)..where((n) => n.id.equals(id))).go();
-
-  Stream<List<Note>> watchAllNotes() => select(notes).watch();
+  static QueryExecutor _openConnection() {
+    return driftDatabase(
+      name: 'my_database',
+      native: const DriftNativeOptions(
+        // By default, `driftDatabase` from `package:drift_flutter` stores the
+        // database files in `getApplicationDocumentsDirectory()`.
+        databaseDirectory: getApplicationSupportDirectory,
+      ),
+      // If you need web support, see https://drift.simonbinder.eu/platforms/web/
+    );
+  }
 }
+```
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'db.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
+and run build_runner to generate the database class
+
+```bash
+dart run build_runner build -d
+```
+
+#### Usage
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final database = AppDatabase();
+
+  await database
+      .into(database.todoItems)
+      .insert(
+        TodoItemsCompanion.insert(
+          title: 'todo: finish drift setup',
+          content: 'We can now write queries and define our own tables.',
+        ),
+      );
+
+  List<TodoItem> allItems = await database.select(database.todoItems).get();
+
+  print('items in database: $allItems');
+
+  List<TodoItem> item = await (database.select(database.todoItems)..where((table) => table.id.equals(2))).get();
+  print('item with id 2: $item');
 }
 ```
 
@@ -481,141 +524,90 @@ LazyDatabase _openConnection() {
 **Pros:**
 
 - Type-safe database access with code generation
+- Query using both SQL and Dart
 - Reactive streams for real-time updates
 - Cross-platform support including web
-- Built-in migration support
-- Excellent IDE support and error checking
+- Built-in threading support
 
 **Cons:**
 
-- Steeper learning curve
-- Code generation adds build complexity
-- Larger app size due to code generation
+- Steeper learning curve because of both SQL and Dart
 - Still requires SQL knowledge for complex queries
+- Complex migration steps
 
-### 4.3.3 Hive
+### 4.3.3 Hive CE (Community Edition of Hive)
 
-Hive is a lightweight, NoSQL database written in pure Dart, designed for Flutter applications with excellent performance characteristics.
+Hive CE is a lightweight, NoSQL database written in pure Dart, designed for Flutter applications with excellent performance characteristics.
 
 #### Dependencies
 
 ```yaml
 dependencies:
-  hive_ce: ^2.6.0
-  hive_ce_flutter: ^2.1.0
-  path_provider: ^2.1.1
+  hive_ce: latest
+  hive_ce_flutter: latest
 
 dev_dependencies:
-  hive_ce_generator: ^1.6.0
-  build_runner: ^2.4.7
+  hive_ce_generator: latest
+  build_runner: latest
 ```
 
 #### Code Example
 
 ```dart
-// note_model.dart
 import 'package:hive_ce/hive.dart';
 
-part 'note_model.g.dart';
-
-@HiveType(typeId: 0)
 class Note extends HiveObject {
-  @HiveField(0)
+  String id;
   String title;
-
-  @HiveField(1)
   String content;
-
-  @HiveField(2)
   DateTime createdAt;
 
   Note({
+    required this.id,
     required this.title,
     required this.content,
     required this.createdAt,
   });
 }
+```
 
-// hive_service.dart
-import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
+and create a file for adapter generation
 
-class HiveService {
-  static late Box<Note> _notesBox;
+```dart
+import 'package:hive_ce/hive.dart';
 
-  static Future<void> init() async {
-    // Initialize Hive
-    await Hive.initFlutter();
+@GenerateAdapters([AdapterSpec<Note>()])
+part 'hive_adapters.g.dart';
+```
 
-    // Register adapters
-    Hive.registerAdapter(NoteAdapter());
+and run build_runner to generate the adapters
 
-    // Open boxes
-    _notesBox = await Hive.openBox<Note>('notes');
-  }
-
-  // CRUD operations
-  static Future<void> addNote(Note note) async {
-    await _notesBox.add(note);
-  }
-
-  static List<Note> getAllNotes() {
-    return _notesBox.values.toList();
-  }
-
-  static Future<void> updateNote(int index, Note note) async {
-    await _notesBox.putAt(index, note);
-  }
-
-  static Future<void> deleteNote(int index) async {
-    await _notesBox.deleteAt(index);
-  }
-
-  static ValueListenable<Box<Note>> getNotesListenable() {
-    return _notesBox.listenable();
-  }
-
-  static Future<void> clearAll() async {
-    await _notesBox.clear();
-  }
-}
+```bash
+dart run build_runner build -d
 ```
 
 #### Usage in Widget
 
 ```dart
-class NotesScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Notes')),
-      body: ValueListenableBuilder<Box<Note>>(
-        valueListenable: HiveService.getNotesListenable(),
-        builder: (context, box, _) {
-          final notes = box.values.toList();
+void main() async {
+  // 1. Initialize Hive
+  await Hive.initFlutter();
 
-          if (notes.isEmpty) {
-            return Center(child: Text('No notes yet'));
-          }
+  // 2. Register adapters
+  Hive.registerAdapters();
 
-          return ListView.builder(
-            itemCount: notes.length,
-            itemBuilder: (context, index) {
-              final note = notes[index];
-              return ListTile(
-                title: Text(note.title),
-                subtitle: Text(note.content),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () => HiveService.deleteNote(index),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
+  // 3. Open box
+  final box = await Hive.openBox<Note>('notes');
+
+  await box.add(Note(
+    id: (box.length + 1).toString(),
+    title: 'Sample Note',
+    content: 'This is a sample note',
+    createdAt: DateTime.now(),
+  ));
+
+  List<Note> allNotes = box.values.toList();
+  print('all notes: $allNotes');
 }
 ```
 
@@ -625,17 +617,18 @@ class NotesScreen extends StatelessWidget {
 
 - Pure Dart implementation (no native dependencies)
 - Excellent performance and low memory footprint
-- Simple and intuitive API
-- Cross-platform support (including web)
+- Simple and fast to setup
+- Support for all platforms
 - Built-in encryption support
-- Reactive UI updates with ValueListenable
+- Isolation support
 
 **Cons:**
 
 - NoSQL limitations for complex relational queries
-- Less mature ecosystem compared to SQLite
 - Manual data modeling required
 - Limited querying capabilities compared to SQL
+- No support for transactions
+- No reactive stream support
 
 ### 4.3.4 ObjectBox
 
@@ -645,12 +638,14 @@ ObjectBox is a high-performance NoSQL database designed for mobile and IoT appli
 
 ```yaml
 dependencies:
-  objectbox: ^2.1.0
-  objectbox_flutter_libs: any
+  objectbox: latest
+  objectbox_flutter_libs: latest
+  path_provider: latest
+  path: latest
 
 dev_dependencies:
-  objectbox_generator: any
-  build_runner: ^2.4.7
+  objectbox_generator: latest
+  build_runner: latest
 ```
 
 #### Code Example
@@ -660,46 +655,75 @@ dev_dependencies:
 import 'package:objectbox/objectbox.dart';
 
 @Entity()
-class Note {
+class NoteEntity {
   @Id()
   int id = 0;
+  final String title;
+  final String content;
+  final DateTime createdAt;
 
-  String title;
-  String content;
-  DateTime createdAt;
-
-  Note({
+  NoteEntity({
     required this.title,
     required this.content,
     required this.createdAt,
   });
-}
 
-// objectbox_service.dart
-import 'package:objectbox/objectbox.dart';
+  @override
+  String toString() {
+    return 'NoteEntity(id: $id, title: $title, content: $content, createdAt: $createdAt)';
+  }
+}
+```
+
+and run build_runner to generate the `objectbox.g.dart` and `objectbox-model.json` files
+
+```bash
+dart run build_runner build -d
+```
+
+and create a service to interact with the database
+
+```dart
+import 'package:flutter_objectbox_sample/note_entity.dart';
+import 'package:flutter_objectbox_sample/objectbox.g.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-class ObjectBoxService {
+class NoteService {
   static late Store _store;
-  static late Box<Note> _noteBox;
+  static late Box<NoteEntity> _noteBox;
 
   static Future<void> init() async {
-    final docsDir = await getApplicationDocumentsDirectory();
-    _store = await openStore(directory: p.join(docsDir.path, 'objectbox'));
-    _noteBox = _store.box<Note>();
+    final directory = await getApplicationDocumentsDirectory();
+    _store = await openStore(directory: p.join(directory.path, 'note-db'));
+    _noteBox = _store.box<NoteEntity>();
   }
 
+  static int get lastIndex => _noteBox.count();
+
   // CRUD operations
-  static int addNote(Note note) {
+  static int addNote(NoteEntity note) {
     return _noteBox.put(note);
   }
 
-  static List<Note> getAllNotes() {
+  static List<NoteEntity> getAllNotes() {
     return _noteBox.getAll();
   }
 
-  static bool updateNote(Note note) {
+  static List<NoteEntity> searchNotes(String keyword) {
+    final query = _noteBox
+        .query(
+          NoteEntity_.title
+              .contains(keyword)
+              .and(NoteEntity_.content.contains(keyword)),
+        )
+        .build();
+    final results = query.find();
+    query.close();
+    return results;
+  }
+
+  static bool updateNote(NoteEntity note) {
     return _noteBox.put(note) != 0;
   }
 
@@ -707,8 +731,11 @@ class ObjectBoxService {
     return _noteBox.remove(id);
   }
 
-  static Stream<List<Note>> watchAllNotes() {
-    return _noteBox.query().watch(triggerImmediately: true).map((query) => query.find());
+  static Stream<List<NoteEntity>> watchAllNotes() {
+    return _noteBox
+        .query()
+        .watch(triggerImmediately: true)
+        .map((query) => query.find());
   }
 
   static void dispose() {
@@ -717,24 +744,76 @@ class ObjectBoxService {
 }
 ```
 
+#### Usage
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await NoteService.init();
+
+  final recipeTitle = RecipeGenerator.generateRecipeTitle();
+  final recipeContent = RecipeGenerator.generateRecipeContent(recipeTitle);
+
+  final noteId = NoteService.addNote(
+    NoteEntity(
+      title: recipeTitle,
+      content: recipeContent,
+      createdAt: DateTime.now(),
+    ),
+  );
+
+  print('Note added with id: $noteId');
+
+  final notes = NoteService.getAllNotes();
+  print('All notes: ${notes.length}');
+
+  final searchResults = NoteService.searchNotes('Chicken');
+  print('Search result:');
+  for (var note in searchResults) {
+    print('\n$note');
+  }
+}
+
+class RecipeGenerator {
+  static const _recipeTitles = [
+    "Chicken",
+    "Beef",
+    "Pork",
+    "Fish",
+    "Vegetable",
+    "Fruit",
+    "Dessert",
+    "Snack",
+    "Drink",
+    "Other",
+  ];
+
+  static String generateRecipeTitle() {
+    return _recipeTitles[Random().nextInt(_recipeTitles.length)];
+  }
+
+  static String generateRecipeContent(String title) {
+    return 'This is the recipe for $title';
+  }
+}
+```
+
 #### Pros and Cons
 
 **Pros:**
 
-- Exceptional performance (10x faster than SQLite in many cases)
-- Simple object-oriented API
-- Built-in support for relationships and indexes
+- Built-in vector store and on device ANN vector search
+- 10x faster than SQLite (This is one of the author's claims)
+- Built-in support for relationships
+- Simple schema migration
 - Reactive queries with streams
-- Cross-platform support
 - Minimal boilerplate code
+- Offline-first Data Sync (Proprietary)
 
 **Cons:**
 
-- Larger binary size impact
-- Less mature than SQLite/Hive
-- Limited community resources
-- Proprietary technology (commercial license required for some use cases)
-- Platform-specific native dependencies
+- No web support
 
 ## 4.4 Choosing the Right Storage Solution
 
@@ -781,6 +860,8 @@ The choice of storage solution depends on your specific requirements:
 - Object-oriented database approach preferred
 - Need for complex relationships between objects
 - Real-time reactive queries required
+- Need for vector search
+- Need for offline-first data sync
 
 ## 4.5 Best Practices
 
@@ -791,11 +872,3 @@ The choice of storage solution depends on your specific requirements:
 3. **Handle errors gracefully**: Always wrap storage operations in try-catch blocks and provide fallback mechanisms.
 
 4. **Implement proper data migration**: Plan for schema changes and data migrations, especially for database solutions.
-
-5. **Consider data encryption**: For sensitive data, always use secure storage or implement encryption at the application level.
-
-6. **Optimize for performance**: Use appropriate indexing for databases and consider lazy loading for large datasets.
-
-7. **Test thoroughly**: Write unit tests for your storage layer and test with various data scenarios.
-
-By understanding these different storage options and their appropriate use cases, you can make informed decisions about data persistence in your Flutter applications.
