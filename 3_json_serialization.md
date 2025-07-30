@@ -1,20 +1,12 @@
-# 3. JSON Serialization
-
-## Overview
+# JSON Serialization
 
 Flutter provides multiple approaches for JSON serialization, ranging from manual implementation to automated code generation.
 
-## Learning Objectives
+## Github
 
-By the end of this section, you will understand:
+- https://github.com/kywsta/dart_json_serializable_example.git
 
-- Manual JSON serialization techniques
-- Automated code generation using `json_annotation`
-- Advanced serialization with `freezed` package
-- Best practices for handling complex data structures
-- Error handling in serialization processes
-
-## 3.1 Manual JSON Serialization
+## Manual JSON Serialization
 
 ### Basic Implementation
 
@@ -69,7 +61,7 @@ and the output will be:
 Product 1 : 100.0
 ```
 
-## 3.2 JSON Annotation Package
+## JSON Annotation Package
 
 The `json_annotation` package provides code generation capabilities to automate serialization logic.
 
@@ -176,7 +168,7 @@ Map<String, dynamic> _$PackageToJson(Package instance) => <String, dynamic>{
 };
 ```
 
-## 3.3 Freezed Package
+## Freezed Package
 
 Freezed is a powerful code generation package that creates immutable(default) or mutable classes with built-in serialization support.
 

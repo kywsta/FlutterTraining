@@ -1,4 +1,4 @@
-# 6. Navigation
+# Navigation
 
 Navigation is a fundamental aspect of mobile application development that allows users to move between different screens and sections of your app. Flutter provides multiple approaches to handle navigation, from the traditional Navigator class to modern declarative routing solutions.
 

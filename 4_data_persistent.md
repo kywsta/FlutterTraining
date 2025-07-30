@@ -1,13 +1,14 @@
-# 4. Data Persistent
+# Data Persistent
 
 Flutter provides several options for local data storage, each suited for different use cases and requirements.
 
-## Github Repos
+## Github
 
-- https://github.com/kywsta/flutter_local_storage_examples.git
-- https://github.com/kywsta/flutter_objectbox_sample.git
+https://github.com/kywsta/flutter_local_storage_examples.git
 
-## 4.1 Shared Preferences
+https://github.com/kywsta/flutter_objectbox_sample.git
+
+## Shared Preferences
 
 Shared Preferences is the simplest form of local storage in Flutter, designed for storing small pieces of primitive data such as user settings, preferences, and simple configuration values.
 
@@ -20,7 +21,7 @@ dependencies:
   shared_preferences: ^2.2.2
 ```
 
-### Code Example
+and create a service to interact with the shared preferences
 
 ```dart
 import 'package:shared_preferences/shared_preferences.dart';
