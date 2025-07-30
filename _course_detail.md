@@ -18,10 +18,11 @@
 4. Data Persistent
 5. CRUD Sample (A note taking app with hive_ce)
 6. Navigation
-   1. Router
-   2. Go Router
-   3. Go, Push, Pop
-   4. Deeplink
+   1. Navigator
+   2. Router
+   3. Go Router
+   4. Go, Push, Pop
+   5. Deeplink
 7. Dependency Injection
 8. Architecture
    1. Clean Architecture
