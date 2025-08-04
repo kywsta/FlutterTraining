@@ -1,123 +1,85 @@
 # Navigation
 
-Navigation is a fundamental aspect of mobile application development that allows users to move between different screens and sections of your app. Flutter provides multiple approaches to handle navigation, from the traditional Navigator class to modern declarative routing solutions.
+Flutter provides multiple approaches to handle navigation, from the traditional Navigator class to modern declarative routing solutions.
 
 ## Overview
 
-Flutter offers several navigation paradigms:
+- **MaterialApp**: The main widget for your app that manages the overall navigation and routing.
 - **Navigator**: The traditional imperative navigation approach
 - **Named Routes**: A more organized way to manage routes using string identifiers
 - **Router**: The modern declarative routing system
 - **GoRouter**: A popular third-party package that simplifies declarative routing
 
-This section will guide you through each approach, starting with the basics and progressing to more advanced concepts.
-
 ## Navigator
 
-### Basic Navigator
+### Basic Navigation Between Screens
 
 ```dart
+// Screen A navigate to Screen B
+Navigator.push(context, MaterialPageRoute(builder: (context) => ScreenB()));
 
+// Screen B navigate back to Screen A
+Navigator.pop(context);
+
+or
+
+// Screen B navigate back to Screen A with some result
+Navigator.pop(context, result);
 ```
 
-## Router
-
-### Understanding Flutter's Router System
-
-Flutter's Router is a declarative navigation system that provides more control over the navigation stack and URL handling. Unlike the imperative Navigator approach, the Router system treats navigation as a state management problem.
-
-#### Key Concepts
-
-**RouteInformation**: Contains information about the current route, including the URL path and state.
-
-**RouteInformationParser**: Converts RouteInformation to a configuration object that your app understands.
-
-**RouterDelegate**: Builds the Navigator widget and handles navigation logic based on the current configuration.
-
-#### Basic Router Implementation
+### Named Routes (Not Recommended)
 
 ```dart
-import 'package:flutter/material.dart';
+// Define routes in MaterialApp
+MaterialApp(
+  initialRoute: '/',
+  routes: {
+    '/': (context) => const ScreenA(),
+    '/b': (context) => const ScreenB(),
+  },
+)
 
-class AppRouterDelegate extends RouterDelegate<String>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<String> {
-  
-  @override
-  final GlobalKey<NavigatorState> navigatorKey;
-  
-  String _currentPath = '/';
-  
-  AppRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
-  
-  @override
-  String get currentConfiguration => _currentPath;
-  
-  @override
-  Widget build(BuildContext context) {
-    return Navigator(
-      key: navigatorKey,
-      pages: [
-        MaterialPage(
-          key: ValueKey('/'),
-          child: HomeScreen(),
-        ),
-        if (_currentPath == '/profile')
-          MaterialPage(
-            key: ValueKey('/profile'),
-            child: ProfileScreen(),
-          ),
-      ],
-      onPopPage: (route, result) {
-        if (!route.didPop(result)) return false;
-        _currentPath = '/';
-        notifyListeners();
-        return true;
-      },
-    );
-  }
-  
-  @override
-  Future<void> setNewRoutePath(String path) async {
-    _currentPath = path;
-    notifyListeners();
-  }
-  
-  void navigateToProfile() {
-    _currentPath = '/profile';
-    notifyListeners();
-  }
-}
+// Navigate to Screen B
+Navigator.pushNamed(context, '/b');
 
-class AppRouteInformationParser extends RouteInformationParser<String> {
-  @override
-  Future<String> parseRouteInformation(RouteInformation routeInformation) async {
-    return routeInformation.location ?? '/';
-  }
-  
-  @override
-  RouteInformation restoreRouteInformation(String path) {
-    return RouteInformation(location: path);
-  }
-}
+// Navigate back to Screen A
+Navigator.pop(context);
 ```
 
-#### Using Router in MaterialApp
+### Navigator Functions
 
 ```dart
-class MyApp extends StatelessWidget {
-  final AppRouterDelegate _routerDelegate = AppRouterDelegate();
-  final AppRouteInformationParser _routeInformationParser = 
-      AppRouteInformationParser();
-  
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Flutter Router Demo',
-      routerDelegate: _routerDelegate,
-      routeInformationParser: _routeInformationParser,
-    );
-  }
-}
+// Push a new route onto the stack
+Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => ScreenC()),
+);
+
+// Pop the current route
+Navigator.pop(context);
+
+// Pop the current route with a result
+Navigator.pop(context, result);
+
+// Push a new route and remove all previous routes from the navigation stack
+Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (context) => ScreenC()),
+  (route) => false,
+);
+
+// Push a new route and remove all previous routes from the navigation stack until a specific route is reached
+Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (context) => ScreenB()),
+  ModalRoute.withName('/'),
+);
+
+// Push a new route and replace the current route
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(builder: (context) => ScreenC()),
+);
 ```
 
 ## Go Router
@@ -130,7 +92,7 @@ Add GoRouter to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  go_router: ^12.1.3
+  go_router: latest
 ```
 
 ### Basic GoRouter Setup
@@ -139,18 +101,19 @@ dependencies:
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
+// Define the router
 final GoRouter _router = GoRouter(
   routes: <RouteBase>[
     GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen();
+        return const ScreenA();
       },
       routes: <RouteBase>[
         GoRoute(
-          path: '/details',
+          path: '/b',
           builder: (BuildContext context, GoRouterState state) {
-            return const DetailsScreen();
+            return const ScreenB();
           },
         ),
       ],
@@ -158,11 +121,14 @@ final GoRouter _router = GoRouter(
   ],
 );
 
-class MyApp extends StatelessWidget {
+// Configure the app to use the router
+class App extends StatelessWidget {
+  const App({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      routerConfig: _router,
+      routerConfig: appRouter,
     );
   }
 }
@@ -266,10 +232,8 @@ context.pop();
 context.pop('Profile saved successfully');
 
 // Pop until a specific route
-context.go('/'); // This will clear the stack and go to home
+context.go('/');
 ```
-
-### Navigation with Data
 
 #### Passing Data Forward
 
@@ -290,46 +254,6 @@ GoRoute(
 ),
 ```
 
-#### Receiving Data Back
-
-```dart
-// Push and wait for result
-final result = await context.push('/edit-item', extra: item);
-
-if (result != null) {
-  final updatedItem = result as Item;
-  // Update your state with the returned data
-  setState(() {
-    items[index] = updatedItem;
-  });
-}
-
-// In the edit screen, return data when popping
-ElevatedButton(
-  onPressed: () {
-    context.pop(updatedItem); // Return the updated item
-  },
-  child: Text('Save'),
-)
-```
-
-### Conditional Navigation
-
-```dart
-void navigateBasedOnUserRole(String role) {
-  switch (role) {
-    case 'admin':
-      context.go('/admin-dashboard');
-      break;
-    case 'user':
-      context.go('/user-dashboard');
-      break;
-    default:
-      context.go('/login');
-  }
-}
-```
-
 ### Navigation Guards
 
 ```dart
@@ -337,17 +261,17 @@ final GoRouter _router = GoRouter(
   redirect: (context, state) {
     final isLoggedIn = AuthService.instance.isLoggedIn;
     final isGoingToLogin = state.matchedLocation == '/login';
-    
+
     // Redirect to login if not authenticated
     if (!isLoggedIn && !isGoingToLogin) {
       return '/login';
     }
-    
+
     // Redirect to home if already logged in and going to login
     if (isLoggedIn && isGoingToLogin) {
       return '/';
     }
-    
+
     return null; // No redirect needed
   },
   routes: [
@@ -364,99 +288,24 @@ Deep linking allows users to navigate directly to specific screens in your app t
 
 #### Android Configuration
 
-Add the following to your `android/app/src/main/AndroidManifest.xml`:
+Get the SHA256 fingerprint of the your app signing key
 
-```xml
-<activity
-    android:name=".MainActivity"
-    android:exported="true"
-    android:launchMode="singleTop"
-    android:theme="@style/LaunchTheme">
-    
-    <!-- Standard App Launch -->
-    <intent-filter android:autoVerify="true">
-        <action android:name="android.intent.action.MAIN"/>
-        <category android:name="android.intent.category.LAUNCHER"/>
-    </intent-filter>
-    
-    <!-- Deep Link Intent Filter -->
-    <intent-filter android:autoVerify="true">
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="https"
-              android:host="yourapp.com" />
-    </intent-filter>
-    
-    <!-- Custom Scheme Deep Link -->
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="yourapp" />
-    </intent-filter>
-</activity>
+```bash
+# If you are using a custom keystore
+keytool -list -v -keystore "your-path-to/keystore.jks" -alias debug -storepass your-store-passs -keypass your-key-pass
+
+# If you are using the default debug keystore
+keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android
 ```
+
+Follow the steps in the [official documentation](https://docs.flutter.dev/cookbook/navigation/set-up-app-links) to configure deep links for Android.
+
 
 #### iOS Configuration
 
-Add the following to your `ios/Runner/Info.plist`:
+Follow the steps in the [official documentation](https://docs.flutter.dev/cookbook/navigation/set-up-universal-links) to configure deep links for iOS.
 
-```xml
-<key>CFBundleURLTypes</key>
-<array>
-    <dict>
-        <key>CFBundleURLName</key>
-        <string>yourapp.com</string>
-        <key>CFBundleURLSchemes</key>
-        <array>
-            <string>https</string>
-        </array>
-    </dict>
-    <dict>
-        <key>CFBundleURLName</key>
-        <string>yourapp</string>
-        <key>CFBundleURLSchemes</key>
-        <array>
-            <string>yourapp</string>
-        </array>
-    </dict>
-</array>
-```
-
-### Handling Deep Links with GoRouter
-
-GoRouter automatically handles deep links when properly configured:
-
-```dart
-final GoRouter _router = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomeScreen(),
-    ),
-    GoRoute(
-      path: '/product/:productId',
-      builder: (context, state) {
-        final productId = state.pathParameters['productId']!;
-        return ProductScreen(productId: productId);
-      },
-    ),
-    GoRoute(
-      path: '/user/:userId/profile',
-      builder: (context, state) {
-        final userId = state.pathParameters['userId']!;
-        final tab = state.uri.queryParameters['tab'];
-        return UserProfileScreen(
-          userId: userId,
-          initialTab: tab,
-        );
-      },
-    ),
-  ],
-);
-```
+**Note**: It might take 24 hours for the changes to take effect.
 
 ### Testing Deep Links
 
@@ -464,16 +313,15 @@ final GoRouter _router = GoRouter(
 
 ```bash
 # Test with ADB
-adb shell am start \
-  -W -a android.intent.action.VIEW \
-  -d "https://yourapp.com/product/123" \
-  com.example.yourapp
+adb shell 'am start -a android.intent.action.VIEW \
+    -c android.intent.category.BROWSABLE \
+    -d "https://flutter-deeplink-example-85985.web.app/b"' \
+    com.example.flutterNavigationSample
 
-# Test custom scheme
-adb shell am start \
-  -W -a android.intent.action.VIEW \
-  -d "yourapp://product/123" \
-  com.example.yourapp
+adb shell 'am start -a android.intent.action.VIEW \
+    -c android.intent.category.BROWSABLE \
+    -d "https://flutter-deeplink-example-85985.web.app/c/12"' \
+    com.example.flutter_navigation_sample
 ```
 
 #### Testing on iOS Simulator
@@ -485,70 +333,3 @@ xcrun simctl openurl booted "https://yourapp.com/product/123"
 # Test custom scheme
 xcrun simctl openurl booted "yourapp://product/123"
 ```
-
-### Dynamic Deep Link Handling
-
-```dart
-class DeepLinkHandler {
-  static Future<void> handleIncomingLink(String link) async {
-    final uri = Uri.parse(link);
-    
-    // Extract path and parameters
-    final path = uri.path;
-    final queryParams = uri.queryParameters;
-    
-    // Handle different deep link patterns
-    if (path.startsWith('/product/')) {
-      final productId = path.split('/')[2];
-      GoRouter.of(context).go('/product/$productId');
-    } else if (path.startsWith('/user/')) {
-      final userId = path.split('/')[2];
-      final tab = queryParams['tab'];
-      GoRouter.of(context).go('/user/$userId/profile?tab=$tab');
-    } else {
-      // Default fallback
-      GoRouter.of(context).go('/');
-    }
-  }
-}
-```
-
-### Best Practices for Deep Linking
-
-1. **Validate Parameters**: Always validate deep link parameters to prevent crashes
-2. **Graceful Fallbacks**: Provide fallback navigation for invalid deep links
-3. **User Authentication**: Handle authentication state when processing deep links
-4. **Analytics**: Track deep link usage for better insights
-
-```dart
-GoRoute(
-  path: '/shared/:contentId',
-  builder: (context, state) {
-    final contentId = state.pathParameters['contentId'];
-    
-    // Validate content ID
-    if (contentId == null || contentId.isEmpty) {
-      return const NotFoundScreen();
-    }
-    
-    // Check authentication if required
-    if (!AuthService.instance.isLoggedIn) {
-      // Store intended destination and redirect to login
-      AuthService.instance.setIntendedDestination(state.uri.toString());
-      return const LoginScreen();
-    }
-    
-    return SharedContentScreen(contentId: contentId);
-  },
-),
-```
-
-## Summary
-
-Navigation in Flutter has evolved from simple imperative approaches to sophisticated declarative systems. The Router system provides powerful control over navigation state, while GoRouter offers a developer-friendly API with excellent deep linking support. Understanding these navigation patterns is crucial for building professional Flutter applications that provide seamless user experiences across different platforms and entry points.
-
-Key takeaways:
-- Use Router for complex navigation requirements with custom logic
-- GoRouter simplifies declarative routing with excellent deep linking support
-- Proper parameter handling and validation are essential for robust navigation
-- Deep linking configuration requires platform-specific setup but provides significant user experience benefits
