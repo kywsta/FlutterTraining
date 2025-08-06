@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Dependency Injection (DI) is a design pattern that allows objects to receive their dependencies from external sources rather than creating them internally. In Flutter development, proper dependency injection leads to more testable, maintainable, and loosely coupled code. 
+Dependency Injection (DI) is a design pattern that allows objects to receive their dependencies from external sources rather than creating them internally. In Flutter development, proper dependency injection leads to more testable, maintainable, and loosely coupled code.
 
 ## Why Use Dependency Injection?
 
@@ -292,7 +292,6 @@ class ItemList extends ChangeNotifier {
 }
 ```
 
-
 #### 1. Service Locator Setup
 
 After the required classes are created, we can setup the service locator.
@@ -305,7 +304,7 @@ void setupServiceLocator() {
   serviceLocator.registerLazySingleton<ItemDataSource>(
     () => MockItemDataSourceImpl(),
   );
-  
+
   serviceLocator.registerLazySingleton<ItemRepository>(
     () => ItemRepositoryImpl(itemDataSource: serviceLocator<ItemDataSource>()),
   );
@@ -316,38 +315,25 @@ void setupServiceLocator() {
 
 ```dart
 void main() {
-  setupLocator();
-  runApp(MyApp());
+  setupServiceLocator();
+
+  runApp(const App());
 }
 
-class MyApp extends StatelessWidget {
+class App extends StatelessWidget {
+  const App({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: HomeScreen(),
-    );
-  }
-}
-```
-
-#### 3. Using Dependencies
-
-```dart
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('GetIt DI Example')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            final apiService = locator<ApiService>();
-            final data = await apiService.fetchData();
-            print(data);
-          },
-          child: Text('Fetch Data'),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => ItemList(serviceLocator<ItemRepository>()),
         ),
-      ),
+      ],
+      builder: (_, _) {
+        return MaterialApp(home: ItemListPage());
+      },
     );
   }
 }
@@ -372,12 +358,12 @@ void setupLocator() {
 ```dart
 void setupLocator() {
   locator.registerSingleton<ApiService>(
-    ApiService(baseUrl: 'https://api.dev.com'), 
+    ApiService(baseUrl: 'https://api.dev.com'),
     instanceName: 'dev'
   );
-  
+
   locator.registerSingleton<ApiService>(
-    ApiService(baseUrl: 'https://api.prod.com'), 
+    ApiService(baseUrl: 'https://api.prod.com'),
     instanceName: 'prod'
   );
 }
@@ -400,133 +386,22 @@ void setupLocator() {
 await locator.allReady();
 ```
 
-#### 4. Scoped Registration
-
-```dart
-void setupLocator() {
-  locator.pushNewScope();
-  
-  // Register scoped dependencies
-  locator.registerSingleton<UserSession>(UserSession());
-  
-  // Later, dispose the scope
-  locator.popScope();
-}
-```
-
-## Practical Example: User Authentication
-
-### Complete Implementation
-
-```dart
-// Services
-abstract class AuthService {
-  Future<bool> login(String email, String password);
-  Future<void> logout();
-  bool get isLoggedIn;
-}
-
-class FirebaseAuthService implements AuthService {
-  bool _isLoggedIn = false;
-  
-  @override
-  Future<bool> login(String email, String password) async {
-    // Simulate authentication
-    await Future.delayed(Duration(seconds: 1));
-    _isLoggedIn = true;
-    return true;
-  }
-  
-  @override
-  Future<void> logout() async {
-    _isLoggedIn = false;
-  }
-  
-  @override
-  bool get isLoggedIn => _isLoggedIn;
-}
-
-class UserRepository {
-  final AuthService _authService;
-  
-  UserRepository(this._authService);
-  
-  Future<bool> authenticateUser(String email, String password) {
-    return _authService.login(email, password);
-  }
-  
-  bool get isUserLoggedIn => _authService.isLoggedIn;
-}
-
-// Setup
-void setupDependencies() {
-  locator.registerLazySingleton<AuthService>(() => FirebaseAuthService());
-  locator.registerLazySingleton<UserRepository>(
-    () => UserRepository(locator<AuthService>()),
-  );
-}
-
-// Usage in Widget
-class LoginScreen extends StatelessWidget {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  
-  @override
-  Widget build(BuildContext context) {
-    final userRepository = locator<UserRepository>();
-    
-    return Scaffold(
-      appBar: AppBar(title: Text('Login')),
-      body: padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                final success = await userRepository.authenticateUser(
-                  _emailController.text,
-                  _passwordController.text,
-                );
-                
-                if (success) {
-                  Navigator.pushReplacementNamed(context, '/home');
-                }
-              },
-              child: Text('Login'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-```
-
 ## Provider vs GetIt Comparison
 
-| Feature | Provider | GetIt |
-|---------|----------|-------|
-| **Learning Curve** | Moderate | Easy |
-| **Widget Integration** | Excellent | Manual |
-| **Global Access** | Through context | Direct access |
-| **Testing** | Good with context | Excellent |
-| **Performance** | Widget rebuilds | No rebuilds |
-| **Scoping** | Widget tree scoped | Manual scoping |
-| **State Management** | Built-in | Separate solution needed |
+| Feature                | Provider           | GetIt                    |
+| ---------------------- | ------------------ | ------------------------ |
+| **Learning Curve**     | Moderate           | Easy                     |
+| **Widget Integration** | Excellent          | Manual                   |
+| **Global Access**      | Through context    | Direct access            |
+| **Testing**            | Good with context  | Excellent                |
+| **Performance**        | Widget rebuilds    | No rebuilds              |
+| **Scoping**            | Widget tree scoped | Manual scoping           |
+| **State Management**   | Built-in           | Separate solution needed |
 
 ## Best Practices
 
 ### 1. Interface Segregation
+
 ```dart
 abstract class DataSource {
   Future<List<User>> getUsers();
@@ -548,6 +423,7 @@ class CacheDataSource implements DataSource {
 ```
 
 ### 2. Environment-Based Registration
+
 ```dart
 void setupLocator() {
   if (Environment.isDevelopment) {
@@ -559,6 +435,7 @@ void setupLocator() {
 ```
 
 ### 3. Disposal Management
+
 ```dart
 void setupLocator() {
   locator.registerSingleton<DatabaseService>(
@@ -571,32 +448,52 @@ void setupLocator() {
 ## Testing with Dependency Injection
 
 ### Unit Testing with GetIt
+
 ```dart
 void main() {
   setUp(() {
-    GetIt.instance.reset();
-    GetIt.instance.registerSingleton<AuthService>(MockAuthService());
+    serviceLocator.reset();
+    setupServiceLocator();
   });
-  
-  testWidgets('should login successfully', (tester) async {
-    final userRepository = UserRepository(GetIt.instance<AuthService>());
-    final result = await userRepository.authenticateUser('test@email.com', 'password');
-    expect(result, true);
+
+  test('should get items from repository', () async {
+    final itemRepository = serviceLocator<ItemRepository>();
+    expect(itemRepository, isA<ItemRepository>());
+
+    final items = await itemRepository.fetchItems();
+    expect(items, isA<List<String>>());
+    expect(items.length, greaterThan(0));
   });
 }
 ```
 
 ### Widget Testing with Provider
+
 ```dart
-testWidgets('should display counter value', (tester) async {
-  await tester.pumpWidget(
-    ChangeNotifierProvider<CounterNotifier>(
-      create: (_) => CounterNotifier(),
-      child: MaterialApp(home: CounterScreen()),
-    ),
+testWidgets('should shown progress indicator during loading and shown items in the list after loading', (tester) async {
+  await tester.pumpWidget(const App());
+
+  expect(find.byType(ItemListPage), findsOneWidget);
+
+  BuildContext context = tester.element(find.byType(ItemListPage));
+
+  final itemList = Provider.of<ItemList>(
+    context,
+    listen: false,
   );
-  
-  expect(find.text('Count: 0'), findsOneWidget);
+
+  expect(itemList, isA<ItemList>());
+  expect(itemList.isLoading, isTrue);
+  expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+  await tester.pump(Duration(seconds: 3));
+
+  expect(itemList.isLoading, isFalse);
+  expect(find.byType(CircularProgressIndicator), findsNothing);
+  expect(find.byType(ListView), findsOneWidget);
+  expect(find.text('Item 1'), findsOneWidget);
+  expect(find.text('Item 2'), findsOneWidget);
+  expect(find.text('Item 3'), findsOneWidget);
 });
 ```
 
