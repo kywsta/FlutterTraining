@@ -8,6 +8,8 @@ https://github.com/kywsta/flutter_local_storage_examples.git
 
 https://github.com/kywsta/flutter_objectbox_sample.git
 
+https://github.com/kywsta/flutter_hive_ce_notepad
+
 ## Shared Preferences
 
 Shared Preferences is the simplest form of local storage in Flutter, designed for storing small pieces of primitive data such as user settings, preferences, and simple configuration values.
