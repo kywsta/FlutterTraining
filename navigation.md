@@ -290,6 +290,10 @@ Deep linking allows users to navigate directly to specific screens in your app t
 
 ### Configuring Deep Links
 
+### Set up hosting
+
+Follow the steps in the [official documentation](https://firebase.google.com/docs/hosting/quickstart?_gl=1*88u658*_up*MQ..*_ga*MTM1MzcyODgwMS4xNzU1MDcyODk2*_ga_CW55HF8NVT*czE3NTUwNzI4OTUkbzEkZzAkdDE3NTUwNzI4OTUkajYwJGwwJGgw) to setup firebase hosting to host the `assetlinks.json` and `apple-app-site-association` files inside the `public/.well-known` folder.
+
 #### Android Configuration
 
 Get the SHA256 fingerprint of the your app signing key
