@@ -4,6 +4,10 @@
 
 Dependency Injection (DI) is a design pattern that allows objects to receive their dependencies from external sources rather than creating them internally. In Flutter development, proper dependency injection leads to more testable, maintainable, and loosely coupled code.
 
+## Github
+
+https://github.com/kywsta/flutter_di_example
+
 ## Why Use Dependency Injection?
 
 - **Testability**: Easy to mock dependencies for unit testing
