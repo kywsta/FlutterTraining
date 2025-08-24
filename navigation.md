@@ -323,21 +323,13 @@ Follow the steps in the [official documentation](https://docs.flutter.dev/cookbo
 # Test with ADB
 adb shell 'am start -a android.intent.action.VIEW \
     -c android.intent.category.BROWSABLE \
-    -d "https://flutter-deeplink-example-85985.web.app/b"' \
+    -d "https://flutter-deeplink-example-85985.web.app/c/5"' \
     com.example.flutterNavigationSample
-
-adb shell 'am start -a android.intent.action.VIEW \
-    -c android.intent.category.BROWSABLE \
-    -d "https://flutter-deeplink-example-85985.web.app/c/12"' \
-    com.example.flutter_navigation_sample
 ```
 
 #### Testing on iOS Simulator
 
 ```bash
 # Test with Simulator
-xcrun simctl openurl booted "https://yourapp.com/product/123"
-
-# Test custom scheme
-xcrun simctl openurl booted "yourapp://product/123"
+xcrun simctl openurl booted "https://flutter-deeplink-example-85985.web.app/c/5"
 ```
