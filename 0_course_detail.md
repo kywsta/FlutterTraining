@@ -35,7 +35,9 @@
     1. Http client
     2. Graphql client
 12. Error Handling(1 hr)
-    1. Dartz
+   1. Flutter Error
+   2. Dartz
+   3. Global Error Handling
 13. Push Notification (1 hr)
 14. Chat App Sample (Theme, Navigation, State management using BLoC, Network Restful and Graphql)(2 hr)
 15. Isolate (1 hr)
